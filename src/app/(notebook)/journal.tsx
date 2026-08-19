@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: paperColors.pencilSoft,
     borderRadius: 8,
-    fontFamily: 'ArchitectsDaughter_400Regular',
+    fontFamily: 'Kalam_700Bold',
     fontSize: 20,
     color: paperColors.pencil,
     padding: spacing.sm,

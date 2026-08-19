@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
-    "@expo-google-fonts/architects-daughter": "^0.4.1",
+    "@expo-google-fonts/kalam": "^0.4.1",
     "@expo-google-fonts/patrick-hand": "^0.4.1",
     "@expo/ui": "~57.0.11",
     "@react-native-async-storage/async-storage": "2.2.0",

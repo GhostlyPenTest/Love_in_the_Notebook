@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   input: {
     borderBottomWidth: 1.5,
     borderColor: paperColors.pencilSoft,
-    fontFamily: 'ArchitectsDaughter_400Regular',
+    fontFamily: 'Kalam_700Bold',
     fontSize: 21,
     color: paperColors.pencil,
     paddingVertical: spacing.xs,

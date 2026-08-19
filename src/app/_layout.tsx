@@ -1,4 +1,4 @@
-import { ArchitectsDaughter_400Regular } from '@expo-google-fonts/architects-daughter';
+import { Kalam_700Bold } from '@expo-google-fonts/kalam';
 import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -23,7 +23,7 @@ const gameHeaderOptions = (title: string) => ({
 });
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ PatrickHand_400Regular, ArchitectsDaughter_400Regular });
+  const [fontsLoaded] = useFonts({ PatrickHand_400Regular, Kalam_700Bold });
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();

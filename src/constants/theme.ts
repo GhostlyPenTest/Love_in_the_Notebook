@@ -60,7 +60,10 @@ export const ruledPaper = {
  */
 export const fonts = {
   hand: 'PatrickHand_400Regular', // big, clean-ish handwriting — headers, buttons, doodled chrome
-  body: 'ArchitectsDaughter_400Regular', // messier scrawl — body copy, notes, entries
+  // Kalam Bold, not ArchitectsDaughter: AD's strokes are thin enough that scaling the
+  // size up doesn't fix legibility, it just makes thin strokes bigger. Kalam has a real
+  // bold weight and still reads as handwriting, not a system font.
+  body: 'Kalam_700Bold',
   system: 'System',
 };
 

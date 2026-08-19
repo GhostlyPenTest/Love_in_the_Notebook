@@ -20,9 +20,9 @@ export function PencilText({ variant = 'body', color, style, children, ...rest }
   );
 }
 
-// Handwriting fonts (PatrickHand/ArchitectsDaughter) have a lower x-height and
-// thinner strokes than a system sans at the same nominal size, so they read
-// noticeably smaller in practice -- sized up across the board to actually be
+// Handwriting fonts have a lower x-height and thinner strokes than a system
+// sans at the same nominal size, so they read noticeably smaller in
+// practice -- sized up across the board to actually be
 // large and easy to read on a phone, not just technically legible.
 const styles = StyleSheet.create({
   title: {
