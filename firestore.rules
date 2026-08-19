@@ -1,0 +1,163 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+//
+// Trust boundary: every collection below is scoped to the two members of a
+// `couples/{coupleId}` doc. A signed-in (anonymous) user can only read/write
+// data for a couple they belong to.
+//
+// Mutual Reveal (mood, journal, trivia): the "hidden until both sides are
+// in" mechanic is enforced HERE, not just by the UI choosing not to render
+// it. Each entry is a meta doc (who has submitted + revealedAt, never the
+// content) plus a `submissions/{uid}` subcollection where each partner's
+// actual content lives. A submission doc is readable by its own author any
+// time, and by the partner only once the parent meta doc's `revealedAt` is
+// set. See lib/reveal/useMutualReveal.ts.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCoupleMember(coupleId) {
+      return signedIn() &&
+        request.auth.uid in
+          get(/databases/$(database)/documents/couples/$(coupleId)).data.memberIds;
+    }
+
+    function isPartnerOf(userId) {
+      let targetCoupleId = get(/databases/$(database)/documents/users/$(userId)).data.coupleId;
+      return targetCoupleId != null && isCoupleMember(targetCoupleId);
+    }
+
+    // --- users/{userId} ---
+    // Self can read/write their own profile. A paired partner can read
+    // (needed for displayName / doodleSet on the partner's side of the UI)
+    // but never write someone else's profile.
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isPartnerOf(userId));
+      allow write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // --- couples/{coupleId} ---
+    match /couples/{coupleId} {
+      allow read: if isCoupleMember(coupleId);
+      // Creating a brand-new notebook: solo member, self-attributed.
+      allow create: if signedIn() &&
+        request.resource.data.memberIds == [request.auth.uid] &&
+        request.resource.data.createdBy == request.auth.uid;
+      // Joining: only transition allowed is 1 member -> that member + you.
+      allow update: if signedIn() &&
+        resource.data.memberIds.size() == 1 &&
+        !(request.auth.uid in resource.data.memberIds) &&
+        request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid]);
+      allow delete: if false;
+    }
+
+    // --- pairingCodes/{code}: code -> coupleId lookup, no personal data ---
+    match /pairingCodes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        request.resource.data.used == false &&
+        request.resource.data.coupleId is string;
+      // Only legal transition: unused -> used, same coupleId.
+      allow update: if signedIn() &&
+        resource.data.used == false &&
+        request.resource.data.used == true &&
+        request.resource.data.coupleId == resource.data.coupleId;
+      allow delete: if false;
+    }
+
+    // A Mutual Reveal submission doc: readable by its author any time, and by
+    // the partner only once the parent meta doc says `revealedAt` is set.
+    // `revealed` is passed in already-evaluated so each call site controls
+    // exactly which meta doc it points at.
+    function canReadSubmission(uid, revealed) {
+      return request.auth.uid == uid || revealed;
+    }
+    function canCreateSubmission(uid) {
+      return request.auth.uid == uid && request.resource.data.userId == uid;
+    }
+
+    // --- moodEntries/{coupleId}/entries/{date} (+ submissions) ---
+    match /moodEntries/{coupleId}/entries/{date} {
+      allow read, write: if isCoupleMember(coupleId);
+
+      match /submissions/{uid} {
+        allow read: if isCoupleMember(coupleId) &&
+          canReadSubmission(uid, get(/databases/$(database)/documents/moodEntries/$(coupleId)/entries/$(date)).data.revealedAt != null);
+        allow create: if isCoupleMember(coupleId) && canCreateSubmission(uid);
+        allow update, delete: if false; // immutable once submitted
+      }
+    }
+
+    // --- journalEntries/{coupleId}/entries/{date} (+ submissions) ---
+    match /journalEntries/{coupleId}/entries/{date} {
+      allow read, write: if isCoupleMember(coupleId);
+
+      match /submissions/{uid} {
+        allow read: if isCoupleMember(coupleId) &&
+          canReadSubmission(uid, get(/databases/$(database)/documents/journalEntries/$(coupleId)/entries/$(date)).data.revealedAt != null);
+        allow create: if isCoupleMember(coupleId) && canCreateSubmission(uid);
+        allow update, delete: if false;
+      }
+    }
+
+    // --- voiceNotes/{coupleId}/notes/{noteId}: free-flowing, not mutual-reveal ---
+    match /voiceNotes/{coupleId}/notes/{noteId} {
+      allow read: if isCoupleMember(coupleId);
+      allow create: if isCoupleMember(coupleId) &&
+        request.resource.data.fromUserId == request.auth.uid;
+      // Only the "listenedAt" ack should change after creation.
+      allow update: if isCoupleMember(coupleId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['listenedAt']);
+      allow delete: if false;
+    }
+
+    // --- signals/{coupleId}/sent/{signalId} ---
+    match /signals/{coupleId}/sent/{signalId} {
+      allow read: if isCoupleMember(coupleId);
+      allow create: if isCoupleMember(coupleId) &&
+        request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isCoupleMember(coupleId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenAt']);
+      allow delete: if false;
+    }
+
+    // --- status/{userId} ---
+    match /status/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isPartnerOf(userId));
+      allow write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // --- gameSessions/{coupleId}/sessions/{sessionId} (+ submissions, trivia only) ---
+    match /gameSessions/{coupleId}/sessions/{sessionId} {
+      allow read: if isCoupleMember(coupleId);
+      allow create: if isCoupleMember(coupleId) &&
+        request.resource.data.playerIds.hasOnly(
+          get(/databases/$(database)/documents/couples/$(coupleId)).data.memberIds
+        );
+      allow update: if isCoupleMember(coupleId);
+      allow delete: if false;
+
+      // Daily Duel Trivia routes its answers through Mutual Reveal too.
+      match /submissions/{uid} {
+        allow read: if isCoupleMember(coupleId) &&
+          canReadSubmission(uid, get(/databases/$(database)/documents/gameSessions/$(coupleId)/sessions/$(sessionId)).data.revealedAt != null);
+        allow create: if isCoupleMember(coupleId) && canCreateSubmission(uid);
+        allow update, delete: if false;
+      }
+    }
+
+    // --- sparkPoints/{coupleId}: V2 seed ---
+    match /sparkPoints/{coupleId} {
+      allow read, write: if isCoupleMember(coupleId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

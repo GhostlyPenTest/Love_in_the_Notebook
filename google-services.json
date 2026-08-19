@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "517282723737",
+    "project_id": "love-in-the-notebook",
+    "storage_bucket": "love-in-the-notebook.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517282723737:android:24033daa26ec59e95f4508",
+        "android_client_info": {
+          "package_name": "com.company.love_in_the_notebook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByKFicxPC1ikCLs5alUVTdWeAN3GTZp7w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,65 +1,75 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * No. 2 pencil / high-school-notebook visual theme.
+ * Applied app-wide via components/paper — not just to games.
  */
 
-import '@/global.css';
-
-import { Platform } from 'react-native';
-
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+export const paperColors = {
+  // paper
+  page: '#FBF7EE', // off-white notebook paper
+  pageShadow: '#EDE6D3',
+  ruleBlue: '#A9C4E8', // faint blue ruled lines
+  marginRed: '#E08585', // red vertical margin line
+  // "ink"
+  pencil: '#33322E', // graphite grey-black, primary text
+  pencilSoft: '#6B6A63', // secondary/muted text
+  pencilFaint: '#B9B6A9', // placeholder/disabled
+  // her set (floral doodles) accent
+  inkPink: '#D2698C',
+  inkPinkSoft: '#F2D6E0',
+  // his set (arrows/stars doodles) accent
+  inkBlue: '#3E6FA6',
+  inkBlueSoft: '#D9E6F5',
+  // status
+  highlighterYellow: '#FCE993',
+  good: '#5B8A6B',
+  warn: '#C9762D',
+  danger: '#C24D4D',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const radii = {
+  sm: 6,
+  md: 12,
+  lg: 20,
+  pill: 999,
+} as const;
+
+/**
+ * Ruled-paper geometry: line spacing mimics wide-ruled notebook paper,
+ * and the red margin sits a fixed distance from the left edge.
+ */
+export const ruledPaper = {
+  lineSpacing: 32,
+  marginInset: 44,
+  lineColor: paperColors.ruleBlue,
+  marginColor: paperColors.marginRed,
+};
+
+/**
+ * Fonts: a handwriting-style display font for headers/notebook chrome,
+ * and a slightly-imperfect body font. Both loaded in app/_layout.tsx via expo-font.
+ * Falls back to system fonts until loaded.
+ */
+export const fonts = {
+  hand: 'PatrickHand_400Regular', // big, clean-ish handwriting — headers, buttons, doodled chrome
+  body: 'ArchitectsDaughter_400Regular', // messier scrawl — body copy, notes, entries
+  system: 'System',
+};
+
+export const shadow = {
+  paper: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+};
