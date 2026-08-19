@@ -5,7 +5,6 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from '
 
 import { paperColors } from '@/constants/theme';
 import { hashSeed, mulberry32 } from '@/lib/paper/rough';
-import { PencilWobbleFilter } from '@/components/paper/PencilFilters';
 
 import { type DoodleSetName, doodleSets } from './doodleSets';
 
@@ -22,7 +21,15 @@ interface SpriteSlot {
 function pickDoodle(rand: () => number, sets: DoodleSetName[]) {
   const setName = sets[Math.floor(rand() * sets.length)];
   const pool = doodleSets[setName];
-  return { setName, doodle: pool[Math.floor(rand() * pool.length)] };
+  const doodle = pool[Math.floor(rand() * pool.length)];
+  // A loose per-instance tilt/scale stands in for the pencil-wobble filter here --
+  // FeTurbulence/FeDisplacementMap are listed by react-native-svg itself as not
+  // implemented on native platforms (confirmed via on-device testing, not just docs),
+  // so they're a silent no-op for these doodles. This reads as "quickly redrawn each
+  // time" instead, which is a fine stand-in and, unlike the filter, actually renders.
+  const rotateDeg = (rand() - 0.5) * 16;
+  const scale = 0.88 + rand() * 0.28;
+  return { setName, doodle, rotateDeg, scale };
 }
 
 function DoodleSprite({ slot, sets, color }: { slot: SpriteSlot; sets: DoodleSetName[]; color: string }) {
@@ -33,12 +40,18 @@ function DoodleSprite({ slot, sets, color }: { slot: SpriteSlot; sets: DoodleSet
   const [current, setCurrent] = useState(() => pickDoodle(rand, sets));
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(0);
-  const wobbleFilterId = `doodle-wobble-${reactId}`;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  const animatedStyle = useAnimatedStyle(
+    () => ({
+      opacity: opacity.value,
+      transform: [
+        { translateY: translateY.value },
+        { rotate: `${current.rotateDeg}deg` },
+        { scale: current.scale },
+      ],
+    }),
+    [current]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +102,6 @@ function DoodleSprite({ slot, sets, color }: { slot: SpriteSlot; sets: DoodleSet
       style={[spriteStyle, { left, top, width: size, height: size }, animatedStyle]}
     >
       <Svg width={size} height={size} viewBox="0 0 32 32">
-        <PencilWobbleFilter id={wobbleFilterId} seed={hashSeed(current.doodle.d.slice(0, 8))} scale={1.6} />
         <Path
           d={current.doodle.d}
           stroke={color}
@@ -97,7 +109,6 @@ function DoodleSprite({ slot, sets, color }: { slot: SpriteSlot; sets: DoodleSet
           strokeLinecap="round"
           strokeLinejoin="round"
           fill="none"
-          filter={`url(#${wobbleFilterId})`}
         />
       </Svg>
     </Animated.View>

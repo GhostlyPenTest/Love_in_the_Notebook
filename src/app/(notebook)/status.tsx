@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     borderColor: paperColors.pencilSoft,
     fontFamily: 'ArchitectsDaughter_400Regular',
-    fontSize: 17,
+    fontSize: 21,
     color: paperColors.pencil,
     paddingVertical: spacing.xs,
     marginTop: spacing.xs,

@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { easProjectId } from '@/lib/firebase/config';
@@ -13,9 +12,38 @@ import { easProjectId } from '@/lib/firebase/config';
  * hardening (e.g. a Cloud Function relay) if this ever needs to resist a
  * malicious client rather than just route notifications between two people
  * who trust each other.
+ *
+ * `expo-notifications` is loaded lazily and skipped entirely when running in
+ * Expo Go: as of SDK 53, remote push was removed from Expo Go, and merely
+ * evaluating the module logs a load-time error there (a bare try/catch
+ * around the import doesn't stop it -- Metro's module system reports the
+ * failure itself before a promise even resolves/rejects, and the resulting
+ * module object is broken rather than absent, so a null-check on the
+ * import result isn't reliable either). Checking `Constants.expoGoConfig`
+ * up front avoids ever touching the module there. Real push still works
+ * fine in a dev/production build; Expo Go just degrades to "no push,"
+ * quietly.
  */
 
-export function configureNotificationHandler() {
+const isExpoGo = Constants.expoGoConfig != null;
+
+let cachedModule: typeof import('expo-notifications') | null | undefined;
+
+async function loadNotifications(): Promise<typeof import('expo-notifications') | null> {
+  if (isExpoGo) return null;
+  if (cachedModule !== undefined) return cachedModule;
+  try {
+    cachedModule = await import('expo-notifications');
+  } catch (err) {
+    console.warn('[push] expo-notifications failed to load:', err);
+    cachedModule = null;
+  }
+  return cachedModule;
+}
+
+export async function configureNotificationHandler(): Promise<void> {
+  const Notifications = await loadNotifications();
+  if (!Notifications) return;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -27,41 +55,44 @@ export function configureNotificationHandler() {
 }
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 200, 120, 200],
-      lightColor: '#3E6FA6',
-    });
-  }
-
-  if (!Device.isDevice) {
-    console.warn('[push] Push notifications need a physical device (or Expo Go with EAS build).');
-    return null;
-  }
-
-  const existing = await Notifications.getPermissionsAsync();
-  let status = existing.status;
-  if (status !== 'granted') {
-    const requested = await Notifications.requestPermissionsAsync();
-    status = requested.status;
-  }
-  if (status !== 'granted') {
-    return null;
-  }
-
-  const projectId = easProjectId || (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
-  if (!projectId) {
-    console.warn('[push] Missing EXPO_PUBLIC_EAS_PROJECT_ID -- run `eas init` and set it in .env.');
-    return null;
-  }
+  const Notifications = await loadNotifications();
+  if (!Notifications) return null;
 
   try {
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 200, 120, 200],
+        lightColor: '#3E6FA6',
+      });
+    }
+
+    if (!Device.isDevice) {
+      console.warn('[push] Push notifications need a physical device (or a dev/production build).');
+      return null;
+    }
+
+    const existing = await Notifications.getPermissionsAsync();
+    let status = existing.status;
+    if (status !== 'granted') {
+      const requested = await Notifications.requestPermissionsAsync();
+      status = requested.status;
+    }
+    if (status !== 'granted') return null;
+
+    const projectId =
+      easProjectId ||
+      (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
+    if (!projectId) {
+      console.warn('[push] Missing EXPO_PUBLIC_EAS_PROJECT_ID -- run `eas init` and set it in .env.');
+      return null;
+    }
+
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     return token;
   } catch (err) {
-    console.warn('[push] Failed to get Expo push token', err);
+    console.warn('[push] Failed to register for push notifications', err);
     return null;
   }
 }

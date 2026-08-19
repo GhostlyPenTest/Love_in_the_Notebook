@@ -20,40 +20,44 @@ export function PencilText({ variant = 'body', color, style, children, ...rest }
   );
 }
 
+// Handwriting fonts (PatrickHand/ArchitectsDaughter) have a lower x-height and
+// thinner strokes than a system sans at the same nominal size, so they read
+// noticeably smaller in practice -- sized up across the board to actually be
+// large and easy to read on a phone, not just technically legible.
 const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.hand,
-    fontSize: 32,
-    lineHeight: 36,
+    fontSize: 42,
+    lineHeight: 46,
     color: paperColors.pencil,
   },
   subtitle: {
     fontFamily: fonts.hand,
-    fontSize: 22,
-    lineHeight: 26,
+    fontSize: 28,
+    lineHeight: 32,
     color: paperColors.pencil,
   },
   label: {
     fontFamily: fonts.hand,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 23,
+    lineHeight: 27,
     color: paperColors.pencil,
   },
   body: {
     fontFamily: fonts.body,
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: 21,
+    lineHeight: 29,
     color: paperColors.pencil,
   },
   small: {
     fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 17,
+    lineHeight: 23,
     color: paperColors.pencilSoft,
   },
   code: {
     fontFamily: fonts.system,
-    fontSize: 16,
+    fontSize: 19,
     letterSpacing: 2,
     color: paperColors.pencil,
   },

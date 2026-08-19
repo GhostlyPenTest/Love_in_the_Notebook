@@ -7,11 +7,13 @@ import { Defs, FeDisplacementMap, FeTurbulence, Filter } from 'react-native-svg'
  * that wants the wobble includes its own copy of this with a unique id --
  * pass a stable id (e.g. from React's useId()) at the call site.
  *
- * Used for hand-drawn line art (doodles, decorative dividers) rather than
- * on every live control -- filter rendering has known Android/iOS
- * inconsistencies, so buttons/cards get their wobble from
- * lib/paper/rough.ts (seeded jittered paths) instead, which renders
- * identically everywhere.
+ * CONFIRMED VIA ON-DEVICE TESTING: react-native-svg logs FeTurbulence and
+ * FeDisplacementMap as "not yet supported on native platforms" -- this
+ * renders as a silent no-op on Android/iOS today. components/doodles/
+ * DoodleLayer.tsx doesn't use it for that reason (see the comment there for
+ * what it uses instead); buttons/cards never did, using lib/paper/rough.ts's
+ * seeded jittered paths, which do render everywhere. Kept here, unused, in
+ * case a web target ever wants the real filter -- it does work in a browser.
  */
 export function PencilWobbleFilter({
   id,

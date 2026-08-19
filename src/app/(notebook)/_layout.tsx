@@ -13,7 +13,7 @@ const TAB_ICONS: Record<string, string> = {
 };
 
 function TabIcon({ name, color }: { name: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{TAB_ICONS[name] ?? '•'}</Text>;
+  return <Text style={{ fontSize: 24, color }}>{TAB_ICONS[name] ?? '•'}</Text>;
 }
 
 /** The tabbed/swipeable "pages" of the shared notebook. */
@@ -33,7 +33,7 @@ export default function NotebookLayout() {
           backgroundColor: paperColors.page,
           borderTopColor: paperColors.ruleBlue,
         },
-        tabBarLabelStyle: { fontFamily: 'PatrickHand_400Regular', fontSize: 12 },
+        tabBarLabelStyle: { fontFamily: 'PatrickHand_400Regular', fontSize: 14 },
       }}
     >
       <Tabs.Screen
